@@ -1,0 +1,56 @@
+{
+  "name": "b10cks-cli",
+  "version": "0.1.2",
+  "license": "AGPL-3.0-or-later",
+  "description": "A CLI to interact with the b10cks API",
+  "main": "./dist/index.mjs",
+  "author": "Michael Wallner @ Coder's Cantina",
+  "files": [
+    "dist/**"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/b10cks/cli.git"
+  },
+  "bin": {
+    "b10cks": "dist/index.mjs"
+  },
+  "scripts": {
+    "build": "unbuild",
+    "dev": "bun run build && ./dist/index.mjs"
+  },
+  "type": "module",
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "chalk": "^5.3.0",
+    "commander": "^12.1.0",
+    "degit": "^2.8.4",
+    "figlet": "^1.7.0",
+    "fs-extra": "^11.2.0",
+    "inquirer": "^11.0.2",
+    "netrc": "^0.1.4",
+    "ora": "^8.1.0",
+    "update-notifier": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.5.5",
+    "@types/bun": "^1.1.10",
+    "@types/degit": "^2.8.6",
+    "@types/figlet": "^1.7.0",
+    "@types/fs-extra": "^11.0.4",
+    "@types/update-notifier": "^6.0.8",
+    "path": "^0.12.7",
+    "unbuild": "^2.0.0"
+  },
+  "peerDependencies": {
+    "typescript": "^5.6.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "release": {
+    "branches": [
+      "main"
+    ]
+  }
+}
