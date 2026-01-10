@@ -15,6 +15,8 @@ interface ApiError extends Error {
 
 class API {
   private headers: Record<string, string>
+  private isRefreshing: boolean = false
+  private refreshPromise: Promise<TokenResponse> | null = null
 
   constructor() {
     this.headers = {
@@ -44,6 +46,56 @@ class API {
       ...this.headers,
       Authorization: `Bearer ${this.getToken()}`,
     }
+  }
+
+  /**
+   * Ensure token is valid, refreshing if necessary
+   */
+  private async ensureValidToken(): Promise<void> {
+    if (!credentials.isTokenExpired()) {
+      return
+    }
+
+    // If already refreshing, wait for that to complete
+    if (this.isRefreshing && this.refreshPromise) {
+      await this.refreshPromise
+      return
+    }
+
+    // Start refresh
+    this.isRefreshing = true
+    try {
+      this.refreshPromise = this.performTokenRefresh()
+      await this.refreshPromise
+    } finally {
+      this.isRefreshing = false
+      this.refreshPromise = null
+    }
+  }
+
+  /**
+   * Perform the actual token refresh
+   */
+  private async performTokenRefresh(): Promise<TokenResponse> {
+    const response = await fetch(`${DOMAIN}/auth/v1/token/refresh`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
+    })
+
+    const data = await this.handleResponse<TokenResponse>(response)
+
+    // Store refreshed token with expiration time
+    const creds = credentials.get()
+    if (creds) {
+      const expiresIn = (data.expires_in || 3600) * 1000 // Convert seconds to milliseconds
+      credentials.set({
+        ...creds,
+        password: data.access_token,
+        expiresAt: Date.now() + expiresIn,
+      })
+    }
+
+    return data
   }
 
   private async handleResponse<_T>(response: Response, type?: string, key?: string, asBuffer?: boolean): Promise<any> {
@@ -82,26 +134,53 @@ class API {
   }
 
   private async makeRequest<T>(url: string, options: RequestInit = {}, type?: string, key?: string): Promise<T> {
+    // Ensure token is valid before making request
+    await this.ensureValidToken()
+
     const response = await fetch(url, {
       ...options,
       headers: options.headers || this.getAuthHeaders(),
     })
+
+    // If we get a 401, try refreshing token and retrying once
+    if (response.status === 401) {
+      try {
+        await this.performTokenRefresh()
+        const retryResponse = await fetch(url, {
+          ...options,
+          headers: options.headers || this.getAuthHeaders(),
+        })
+        return this.handleResponse<T>(retryResponse, type, key)
+      } catch (_error: any) {
+        // If refresh fails, handle the original 401
+        return this.handleResponse<T>(response, type, key)
+      }
+    }
+
     return this.handleResponse<T>(response, type, key)
   }
 
   async login(input: LoginPayload): Promise<TokenResponse> {
-    return this.makeRequest<TokenResponse>(`${DOMAIN}/auth/v1/token`, {
+    const response = await fetch(`${DOMAIN}/auth/v1/token`, {
       method: 'POST',
       headers: this.headers,
       body: JSON.stringify(input),
     })
+    const data = await this.handleResponse<TokenResponse>(response)
+
+    // Store expiration time when logging in
+    const expiresIn = (data.expires_in || 3600) * 1000 // Convert seconds to milliseconds
+    credentials.set({
+      login: input.email,
+      password: data.access_token,
+      expiresAt: Date.now() + expiresIn,
+    })
+
+    return data
   }
 
   async refreshToken(): Promise<TokenResponse> {
-    return this.makeRequest<TokenResponse>(`${DOMAIN}/auth/v1/token/refresh`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-    })
+    return this.performTokenRefresh()
   }
 
   async logout(): Promise<boolean> {

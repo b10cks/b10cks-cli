@@ -4,6 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dt/b10cks-cli.svg)](https://www.npmjs.com/package/b10cks-cli)
 [![GitHub issues](https://img.shields.io/github/issues/b10cks/b10cks-cli.svg?style=flat-square)](https://github.com/b10cks/b10cks-cli/issues)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
+[![Linted with Biome](https://img.shields.io/badge/Linted_with-Biome-60a5fa?style=flat&logo=biome)](https://biomejs.dev)
 
 ## Overview
 
