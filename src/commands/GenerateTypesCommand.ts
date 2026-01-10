@@ -1,3 +1,4 @@
+import chalk from 'chalk'
 import type { Command } from 'commander'
 import { TypesGeneratorService } from '../services/TypeGeneratorService.js'
 import { BaseCommand } from './BaseCommand.js'
@@ -15,6 +16,9 @@ export class GenerateTypesCommand extends BaseCommand {
         }
 
         try {
+          console.log(`\n${chalk.bold('Generating types for space:')} ${chalk.cyan(space)}`)
+          console.log(`${chalk.dim('Output path:')} ${options.out}\n`)
+
           const service = new TypesGeneratorService(options.out)
           await service.generate(space)
         } catch (error: any) {

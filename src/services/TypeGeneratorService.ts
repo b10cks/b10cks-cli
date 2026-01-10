@@ -1,4 +1,5 @@
 import * as fs from 'node:fs'
+import chalk from 'chalk'
 import * as path from 'path'
 import type { BlockList, BlockResource } from '../types'
 import BaseService from './BaseService'
@@ -8,6 +9,7 @@ export class TypesGeneratorService extends BaseService {
   private readonly generatedFilePath: string
   private readonly indexFilePath: string
   private allBlocks: BlockList = {}
+  private generatedTypes: string[] = []
 
   constructor(outputDir: string = './b10cks/types') {
     super()
@@ -36,10 +38,26 @@ export class TypesGeneratorService extends BaseService {
     }, {} as BlockList)
 
     this.generateTypes(data)
+    this.displayGeneratedTypes()
+  }
+
+  private displayGeneratedTypes(): void {
+    if (this.generatedTypes.length === 0) {
+      return
+    }
+
+    console.log(`\n${chalk.green('✓')} TypeScript types generated successfully!`)
+    console.log(`\n${chalk.bold('Generated Types:')}`)
+    this.generatedTypes.forEach((type) => {
+      console.log(`${chalk.cyan(type)}`)
+    })
+    console.log(`\n${chalk.bold('Location:')} ${this.outputDir}`)
+    console.log(`${chalk.bold('Files:')} generated.d.ts, index.d.ts\n`)
   }
 
   public generateTypes(blocks: Array<BlockResource>): void {
     this.ensureDirectoryExists(this.outputDir)
+    this.generatedTypes = []
 
     const typesContent = this.generateTypesContent(blocks)
 
@@ -97,7 +115,7 @@ export type B10cksLink = {
   url: string
   title: string
   content: string
-  target?: '_self' | '_blank' | '_parent' | '_top'  
+  target?: '_self' | '_blank' | '_parent' | '_top'
 }
 
 `
@@ -106,6 +124,7 @@ export type B10cksLink = {
       const typeName = this.getInterfaceName(block.slug)
       const interfaceContent = this.generateInterfaceContent(block, typeName)
       content += interfaceContent
+      this.generatedTypes.push(typeName)
     })
 
     return content
@@ -195,7 +214,7 @@ export type B10cksLink = {
           }
         }
 
-        return 'Array<BItem>'
+        return 'Array<B10cksItem>'
       }
       case 'option':
         if (schema.options && Array.isArray(schema.options)) {
