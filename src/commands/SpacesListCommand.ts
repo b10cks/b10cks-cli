@@ -21,7 +21,7 @@ export class SpacesListCommand extends BaseCommand {
 
           console.log(`\n${chalk.bold('Available Spaces:')}`)
           response.data.forEach((space) => {
-            console.log(`${chalk.cyan(space.id)} ${space.name}`)
+            console.log(`${chalk.yellow(space.id)} ${space.name}`)
           })
         } catch (error: any) {
           this.handleError(error)

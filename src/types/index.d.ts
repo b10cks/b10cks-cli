@@ -78,3 +78,16 @@ export interface CreateTeamPayload {
 export interface CreateTeamResponse {
   data: Team
 }
+
+export interface SpacesHierarchyNode {
+  id: string
+  name: string
+  type: 'team' | 'space'
+  color?: string
+  icon?: string
+  children?: SpacesHierarchyNode[]
+}
+
+export interface SpacesHierarchyResponse {
+  data: SpacesHierarchyNode
+}
