@@ -32,3 +32,49 @@ export type BlockList = Record<
 export interface BlockListResponse {
   data: BlockResource[]
 }
+
+export interface Space {
+  id: string
+  state: string
+  name: string
+  color?: string
+  icon?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface SpacesResponse {
+  data: Space[]
+}
+
+export interface Team {
+  id: string
+  name: string
+  parent_id?: string | null
+}
+
+export interface TeamsResponse {
+  data: Team[]
+}
+
+export interface TeamHierarchyNode {
+  id: string
+  name: string
+  children?: TeamHierarchyNode[]
+}
+
+export interface TeamHierarchyResponse {
+  data: TeamHierarchyNode
+}
+
+export interface CreateTeamPayload {
+  name: string
+  icon?: string
+  color?: string
+  description?: string
+  parent_id?: string | null
+}
+
+export interface CreateTeamResponse {
+  data: Team
+}

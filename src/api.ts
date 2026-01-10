@@ -2,7 +2,15 @@ import fs from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import path from 'path'
-import type { BlockListResponse, LoginPayload, TokenResponse } from './types'
+import type {
+  BlockListResponse,
+  CreateTeamPayload,
+  CreateTeamResponse,
+  LoginPayload,
+  SpacesResponse,
+  TeamsResponse,
+  TokenResponse,
+} from './types'
 import credentials from './utils/credentials'
 
 const DOMAIN = process.env.B10CKS_API_DOMAIN || 'https://api.b10cks.com'
@@ -196,7 +204,22 @@ class API {
   }
 
   async getBlocks(space: string): Promise<BlockListResponse> {
-    return this.makeRequest<BlockListResponse>(`${DOMAIN}/mgmt/v1/spaces/${space}/blocks?per_page=1000`)
+    return this.makeRequest<BlockListResponse>(`${DOMAIN}/mgmt/v1/spaces/${space}/blocks?per_page=9999`)
+  }
+
+  async getSpaces(): Promise<SpacesResponse> {
+    return this.makeRequest<SpacesResponse>(`${DOMAIN}/mgmt/v1/spaces`)
+  }
+
+  async getTeams(): Promise<TeamsResponse> {
+    return this.makeRequest<TeamsResponse>(`${DOMAIN}/mgmt/v1/teams`)
+  }
+
+  async createTeam(payload: CreateTeamPayload): Promise<CreateTeamResponse> {
+    return this.makeRequest<CreateTeamResponse>(`${DOMAIN}/mgmt/v1/teams`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
   }
 }
 
