@@ -1,21 +1,16 @@
-import credentials from './utils/credentials'
-import {
-  BlockListResponse,
-  LoginPayload,
-  TokenResponse
-} from './types'
-import fs from 'fs'
-import path from 'path'
+import fs from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import chalk from 'chalk'
+import path from 'path'
+import type { BlockListResponse, LoginPayload, TokenResponse } from './types'
+import credentials from './utils/credentials'
 
 const DOMAIN = process.env.B10CKS_API_DOMAIN || 'https://api.b10cks.com'
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 interface ApiError extends Error {
-  status?: number;
-  errors?: Record<string, string[]>;
+  status?: number
+  errors?: Record<string, string[]>
 }
 
 class API {
@@ -23,9 +18,9 @@ class API {
 
   constructor() {
     this.headers = {
-      'Accept': 'application/json',
+      Accept: 'application/json',
       'Content-Type': 'application/json',
-      'User-Agent': `b10cks-cli/${this.getVersion()}`
+      'User-Agent': `b10cks-cli/${this.getVersion()}`,
     }
   }
 
@@ -47,11 +42,11 @@ class API {
   private getAuthHeaders(): Record<string, string> {
     return {
       ...this.headers,
-      'Authorization': `Bearer ${this.getToken()}`
+      Authorization: `Bearer ${this.getToken()}`,
     }
   }
 
-  private async handleResponse<T>(response: Response, type?: string, key?: string, asBuffer?: boolean): Promise<any> {
+  private async handleResponse<_T>(response: Response, type?: string, key?: string, asBuffer?: boolean): Promise<any> {
     if (!response.ok) {
       const error: ApiError = new Error('API error')
       error.status = response.status
@@ -66,7 +61,7 @@ class API {
         case 404:
           error.message = type && key ? `${type} with key "${key}" not found.` : 'Resource not found.'
           break
-        case 422:
+        case 422: {
           const errorData = await response.json()
           if (errorData.errors) {
             error.errors = errorData.errors
@@ -75,6 +70,7 @@ class API {
               .join(', ')
           }
           break
+        }
         default:
           error.message = (await response.json()).error || response.statusText
       }
@@ -82,13 +78,13 @@ class API {
       throw error
     }
 
-    return asBuffer ? Buffer.from(await response.arrayBuffer()) : response.json();
+    return asBuffer ? Buffer.from(await response.arrayBuffer()) : response.json()
   }
 
   private async makeRequest<T>(url: string, options: RequestInit = {}, type?: string, key?: string): Promise<T> {
     const response = await fetch(url, {
       ...options,
-      headers: options.headers || this.getAuthHeaders()
+      headers: options.headers || this.getAuthHeaders(),
     })
     return this.handleResponse<T>(response, type, key)
   }
@@ -97,7 +93,14 @@ class API {
     return this.makeRequest<TokenResponse>(`${DOMAIN}/auth/v1/token`, {
       method: 'POST',
       headers: this.headers,
-      body: JSON.stringify(input)
+      body: JSON.stringify(input),
+    })
+  }
+
+  async refreshToken(): Promise<TokenResponse> {
+    return this.makeRequest<TokenResponse>(`${DOMAIN}/auth/v1/token/refresh`, {
+      method: 'POST',
+      headers: this.getAuthHeaders(),
     })
   }
 
@@ -105,17 +108,16 @@ class API {
     try {
       await this.makeRequest(`${DOMAIN}/auth/v1/token`, {
         method: 'POST',
-        body: JSON.stringify({ _method: 'DELETE' })
+        body: JSON.stringify({ _method: 'DELETE' }),
       })
       return true
-    } catch (error: any) {
-      console.error(chalk.red('✖'), error.message)
+    } catch (_error: any) {
       return false
     }
   }
 
   async getBlocks(space: string): Promise<BlockListResponse> {
-    return this.makeRequest<BlockListResponse>(`${DOMAIN}/mgmt/v1/spaces/${space}/blocks`)
+    return this.makeRequest<BlockListResponse>(`${DOMAIN}/mgmt/v1/spaces/${space}/blocks?per_page=1000`)
   }
 }
 

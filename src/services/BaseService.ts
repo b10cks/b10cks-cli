@@ -1,4 +1,4 @@
-import { ChalkInstance } from 'chalk'
+import type { ChalkInstance } from 'chalk'
 import API from '../api'
 
 class BaseService {
@@ -9,7 +9,9 @@ class BaseService {
   }
 
   protected output(content: string | ChalkInstance, silent: boolean = false): void {
-    if (!silent) console.log(content)
+    if (!silent) {
+      console.log(content)
+    }
   }
 }
 

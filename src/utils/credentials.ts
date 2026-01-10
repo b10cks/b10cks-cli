@@ -1,11 +1,11 @@
-import path from 'path'
-import fs from 'fs'
+import fs from 'node:fs'
+import os from 'node:os'
 import netrc from 'netrc'
-import os from 'os'
+import path from 'path'
 
 const getFile = () => {
-  const home = process.env[(/^win/.test(process.platform)) ? 'USERPROFILE' : 'HOME']
-  return path.join(home, '.netrc')
+  const home = process.env[/^win/.test(process.platform) ? 'USERPROFILE' : 'HOME']
+  return path.join(home!, '.netrc')
 }
 
 const getNrcFile = () => {
@@ -13,37 +13,37 @@ const getNrcFile = () => {
 
   try {
     obj = netrc(getFile())
-  } catch (e) {
+  } catch (_e) {
     obj = {}
   }
 
   return obj
 }
 
-const get = function (host: string = 'b10cks.com') {
+const get = (host: string = 'b10cks.com') => {
   const obj = getNrcFile()
 
   if (process.env.B10CKS_LOGIN && process.env.B10CKS_TOKEN) {
     return {
       email: process.env.B10CKS_LOGIN,
-      token: process.env.B10CKS_TOKEN
+      token: process.env.B10CKS_TOKEN,
     }
   }
 
-  if (Object.hasOwnProperty.call(obj, host)) {
+  if (Object.hasOwn(obj, host)) {
     return obj[host]
   }
 
   return null
 }
 
-const set = function (content: {} | null, host: string = 'b10cks.com') {
+const set = (content: {} | null, host: string = 'b10cks.com') => {
   const file = getFile()
   let obj = {}
 
   try {
     obj = netrc(file)
-  } catch (e) {
+  } catch (_e) {
     obj = {}
   }
 
@@ -61,5 +61,5 @@ const set = function (content: {} | null, host: string = 'b10cks.com') {
 export default {
   set: set,
   get: get,
-  clear: () => set(null)
+  clear: () => set(null),
 }

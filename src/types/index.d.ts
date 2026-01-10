@@ -15,10 +15,19 @@ export interface BlockResource {
   slug: string
   icon: string
   schema: object
+  tags: string[]
   description: string
   created_at: string
   updated_at: string
 }
+
+export type BlockList = Record<
+  string,
+  {
+    name: string
+    tags: string[]
+  }
+>
 
 export interface BlockListResponse {
   data: BlockResource[]

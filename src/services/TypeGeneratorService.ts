@@ -1,22 +1,25 @@
-import * as fs from 'fs'
+import * as fs from 'node:fs'
 import * as path from 'path'
+import type { BlockList, BlockResource } from '../types'
 import BaseService from './BaseService'
-import { BlockResource } from '../types'
 
-/**
- * Service for generating TypeScript definition files from API responses
- */
-export class TypesGeneratorService extends  BaseService{
+export class TypesGeneratorService extends BaseService {
   private readonly outputDir: string
   private readonly generatedFilePath: string
   private readonly indexFilePath: string
+  private allBlocks: BlockList = {}
 
-  /**
-   * Creates a new instance of TypesGeneratorService
-   * @param outputDir The directory to write the definition files to
-   */
-  constructor(outputDir: string = 'blocks/types') {
+  constructor(outputDir: string = './b10cks/types') {
     super()
+    if (!path.isAbsolute(outputDir)) {
+      const appDir = path.join(process.cwd(), 'app')
+      if (fs.existsSync(appDir)) {
+        outputDir = path.join(appDir, outputDir)
+      } else {
+        outputDir = path.join(process.cwd(), outputDir)
+      }
+    }
+
     this.outputDir = outputDir
     this.generatedFilePath = path.join(this.outputDir, 'generated.d.ts')
     this.indexFilePath = path.join(this.outputDir, 'index.d.ts')
@@ -24,6 +27,14 @@ export class TypesGeneratorService extends  BaseService{
 
   public async generate(space: string) {
     const { data } = await this.api.getBlocks(space)
+    this.allBlocks = data.reduce((acc, { slug, tags }) => {
+      acc[slug] = {
+        name: this.getInterfaceName(slug),
+        tags,
+      }
+      return acc
+    }, {} as BlockList)
+
     this.generateTypes(data)
   }
 
@@ -33,44 +44,44 @@ export class TypesGeneratorService extends  BaseService{
     const typesContent = this.generateTypesContent(blocks)
 
     fs.writeFileSync(this.generatedFilePath, typesContent)
-    console.log(`Generated types written to ${this.generatedFilePath}`)
 
     this.createIndexFileIfNotExists()
   }
 
-  /**
-   * Ensures the output directory exists, creating it if necessary
-   * @param dirPath The directory path to ensure exists
-   */
   private ensureDirectoryExists(dirPath: string): void {
     if (!fs.existsSync(dirPath)) {
       fs.mkdirSync(dirPath, { recursive: true })
-      console.log(`Created directory: ${dirPath}`)
     }
   }
 
-  /**
-   * Creates the index.d.ts file if it doesn't exist
-   */
   private createIndexFileIfNotExists(): void {
     if (!fs.existsSync(this.indexFilePath)) {
       const indexContent = `export * from './generated';\n`
       fs.writeFileSync(this.indexFilePath, indexContent)
-      console.log(`Created index file at ${this.indexFilePath}`)
     } else {
-      console.log(`Index file already exists at ${this.indexFilePath}`)
     }
   }
 
-  /**
-   * Generates the content for the generated.d.ts file
-   * @param blocks The blocks from the API response
-   * @returns The generated TypeScript definition content
-   */
   private generateTypesContent(blocks: any[]): string {
     let content = `export interface B10cksItem {
   id: string
   block: string
+}
+
+export type B10cksAsset = {
+    url: string
+    data: Record<string, never>
+    metadata: {
+      width: number
+      height: number
+    },
+    id: string
+    size: number
+    type: "asset"
+    filename: string
+    extension: string
+    full_path: string
+    mime_type: string
 }
 
 export type B10cksLink = {
@@ -79,11 +90,19 @@ export type B10cksLink = {
   target?: '_self' | '_blank' | '_parent' | '_top'
   rel?: string
 } | {
-  email?: string
+  email: string
   type: 'email'
-}`
+} | {
+  type: 'internal'
+  url: string
+  title: string
+  content: string
+  target?: '_self' | '_blank' | '_parent' | '_top'  
+}
 
-    blocks.forEach(block => {
+`
+
+    blocks.forEach((block) => {
       const typeName = this.getInterfaceName(block.slug)
       const interfaceContent = this.generateInterfaceContent(block, typeName)
       content += interfaceContent
@@ -98,7 +117,7 @@ export type B10cksLink = {
    * @returns The interface name
    */
   private getInterfaceName(slug: string): string {
-    return 'B10cks' + slug.charAt(0).toUpperCase() + slug.slice(1)
+    return `B10cks${slug.charAt(0).toUpperCase()}${slug.slice(1)}`
   }
 
   /**
@@ -112,12 +131,12 @@ export type B10cksLink = {
 
     if (block.schema) {
       const properties = Object.entries(block.schema).map(([key, schema]: [string, any]) => {
-        let type = this.mapSchemaTypeToTsType(schema.type, key, block.slug, schema)
-        let optional = !schema.required ? '?' : ''
+        const type = this.mapSchemaTypeToTsType(schema.type, key, block.slug, schema)
+        const optional = !schema.required ? '?' : ''
         return `\t${key}${optional}: ${type}`
       })
 
-      content += properties.join('\n') + '\n'
+      content += `${properties.join('\n')}\n`
     }
 
     content += '}\n\n'
@@ -132,7 +151,7 @@ export type B10cksLink = {
    * @param schema The complete schema object
    * @returns The corresponding TypeScript type
    */
-  private mapSchemaTypeToTsType(schemaType: string, key: string, blockSlug: string, schema: any): string {
+  private mapSchemaTypeToTsType(schemaType: string, _key: string, _blockSlug: string, schema: any): string {
     switch (schemaType) {
       case 'text':
       case 'textarea':
@@ -144,10 +163,30 @@ export type B10cksLink = {
         return 'number'
       case 'link':
         return 'B10cksLink'
-      case 'blocks':
-        // Use whitelist if available to determine array type
-        if (schema.block_whitelist && schema.block_whitelist.length > 0) {
-          const whitelistTypes = schema.block_whitelist.map((slug: string) => this.getInterfaceName(slug))
+      case 'asset':
+        return 'B10cksAsset'
+      case 'multiAsset':
+        return 'Array<B10cksAsset>'
+      case 'blocks': {
+        const whitelistTypes: string[] = []
+        if (schema.restrict_blocks && (schema.block_whitelist?.length > 0 || schema.tag_whitelist?.length > 0)) {
+          schema.block_whitelist.forEach((blockSlug: string) => {
+            if (this.allBlocks[blockSlug]) {
+              whitelistTypes.push(this.allBlocks[blockSlug].name)
+            } else {
+            }
+          })
+
+          schema.tag_whitelist.forEach((tag: string) => {
+            const matchingBlocks = Object.entries(this.allBlocks)
+              .filter(([_, block]) => block.tags?.includes(tag))
+              .map(([_slug, block]) => block.name)
+
+            if (matchingBlocks.length > 0) {
+              whitelistTypes.push(...matchingBlocks)
+            } else {
+            }
+          })
 
           if (whitelistTypes.length === 1) {
             return `${whitelistTypes[0]}[]`
@@ -156,10 +195,9 @@ export type B10cksLink = {
           }
         }
 
-        // Default to BItem array if no whitelist
         return 'Array<BItem>'
+      }
       case 'option':
-        // Extract options if available
         if (schema.options && Array.isArray(schema.options)) {
           const optionValues = schema.options
             .filter((option: any) => option.value !== undefined)

@@ -1,13 +1,23 @@
-import { LoginPayload } from '../types'
+import type { LoginPayload } from '../types'
 import credentials from '../utils/credentials'
 import BaseService from './BaseService'
 
-export default class Service extends BaseService{
+export default class Service extends BaseService {
   async login(input: LoginPayload) {
     const data = await this.api.login(input)
     credentials.set({
       login: input.email,
-      password: data.access_token
+      password: data.access_token,
+    })
+
+    return true
+  }
+
+  async refreshToken() {
+    const data = await this.api.refreshToken()
+    credentials.set({
+      login: credentials.get().email,
+      password: data.access_token,
     })
 
     return true
