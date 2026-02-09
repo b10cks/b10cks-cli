@@ -3,11 +3,7 @@ import type { Command } from 'commander'
 import chalk from 'chalk'
 
 import Service from '../services/Service.js'
-import {
-  displayTokenInfo,
-  ensureLoggedIn,
-  refreshTokenIfNeeded,
-} from '../utils/refreshTokenIfNeeded.js'
+import { displayTokenInfo, ensureLoggedIn } from '../utils/refreshTokenIfNeeded.js'
 
 export abstract class BaseCommand {
   protected service: Service
@@ -18,13 +14,6 @@ export abstract class BaseCommand {
 
   protected async ensureAuthenticated(): Promise<boolean> {
     ensureLoggedIn()
-
-    const refreshed = await refreshTokenIfNeeded()
-    if (!refreshed) {
-      console.error(`${chalk.red('✖')} Could not refresh authentication token`)
-      return false
-    }
-
     return true
   }
 

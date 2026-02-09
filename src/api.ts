@@ -7,10 +7,8 @@ import type {
   BlockListResponse,
   CreateTeamPayload,
   CreateTeamResponse,
-  LoginPayload,
   SpacesResponse,
   TeamsResponse,
-  TokenResponse,
 } from './types'
 
 import credentials from './utils/credentials'
@@ -25,8 +23,6 @@ interface ApiError extends Error {
 
 class API {
   private headers: Record<string, string>
-  private isRefreshing: boolean = false
-  private refreshPromise: Promise<TokenResponse> | null = null
 
   constructor() {
     this.headers = {
@@ -46,7 +42,7 @@ class API {
   private getToken(): string {
     const creds = credentials.get()
     if (!creds?.password) {
-      throw new Error('Not logged in. Please login first.')
+      throw new Error('Not authenticated. Please login first.')
     }
     return creds.password
   }
@@ -56,56 +52,6 @@ class API {
       ...this.headers,
       Authorization: `Bearer ${this.getToken()}`,
     }
-  }
-
-  /**
-   * Ensure token is valid, refreshing if necessary
-   */
-  private async ensureValidToken(): Promise<void> {
-    if (!credentials.isTokenExpired()) {
-      return
-    }
-
-    // If already refreshing, wait for that to complete
-    if (this.isRefreshing && this.refreshPromise) {
-      await this.refreshPromise
-      return
-    }
-
-    // Start refresh
-    this.isRefreshing = true
-    try {
-      this.refreshPromise = this.performTokenRefresh()
-      await this.refreshPromise
-    } finally {
-      this.isRefreshing = false
-      this.refreshPromise = null
-    }
-  }
-
-  /**
-   * Perform the actual token refresh
-   */
-  private async performTokenRefresh(): Promise<TokenResponse> {
-    const response = await fetch(`${DOMAIN}/auth/v1/token/refresh`, {
-      method: 'POST',
-      headers: this.getAuthHeaders(),
-    })
-
-    const data = await this.handleResponse<TokenResponse>(response)
-
-    // Store refreshed token with expiration time
-    const creds = credentials.get()
-    if (creds) {
-      const expiresIn = (data.expires_in || 3600) * 1000 // Convert seconds to milliseconds
-      credentials.set({
-        ...creds,
-        password: data.access_token,
-        expiresAt: Date.now() + expiresIn,
-      })
-    }
-
-    return data
   }
 
   private async handleResponse<_T>(
@@ -120,7 +66,7 @@ class API {
 
       switch (response.status) {
         case 401:
-          error.message = 'Authentication failed. Please check your Login.'
+          error.message = 'Authentication failed. Please check your personal access token.'
           break
         case 403:
           error.message = 'Access denied. Please check for a valid license.'
@@ -155,60 +101,33 @@ class API {
     type?: string,
     key?: string
   ): Promise<T> {
-    // Ensure token is valid before making request
-    await this.ensureValidToken()
-
     const response = await fetch(url, {
       ...options,
       headers: options.headers || this.getAuthHeaders(),
     })
 
-    // If we get a 401, try refreshing token and retrying once
-    if (response.status === 401) {
-      try {
-        await this.performTokenRefresh()
-        const retryResponse = await fetch(url, {
-          ...options,
-          headers: options.headers || this.getAuthHeaders(),
-        })
-        return this.handleResponse<T>(retryResponse, type, key)
-      } catch (_error: any) {
-        // If refresh fails, handle the original 401
-        return this.handleResponse<T>(response, type, key)
-      }
-    }
-
     return this.handleResponse<T>(response, type, key)
   }
 
-  async login(input: LoginPayload): Promise<TokenResponse> {
-    const response = await fetch(`${DOMAIN}/auth/v1/token`, {
-      method: 'POST',
-      headers: this.headers,
-      body: JSON.stringify(input),
-    })
-    const data = await this.handleResponse<TokenResponse>(response)
-
-    // Store expiration time when logging in
-    const expiresIn = (data.expires_in || 3600) * 1000 // Convert seconds to milliseconds
-    credentials.set({
-      login: input.email,
-      password: data.access_token,
-      expiresAt: Date.now() + expiresIn,
-    })
-
-    return data
-  }
-
-  async refreshToken(): Promise<TokenResponse> {
-    return this.performTokenRefresh()
+  async verifyToken(token: string): Promise<boolean> {
+    try {
+      const response = await fetch(`${DOMAIN}/mgmt/v1/users/me`, {
+        method: 'GET',
+        headers: {
+          ...this.headers,
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      return response.ok
+    } catch (_error: any) {
+      return false
+    }
   }
 
   async logout(): Promise<boolean> {
     try {
-      await this.makeRequest(`${DOMAIN}/auth/v1/token`, {
+      await this.makeRequest(`${DOMAIN}/auth/v1/logout`, {
         method: 'POST',
-        body: JSON.stringify({ _method: 'DELETE' }),
       })
       return true
     } catch (_error: any) {

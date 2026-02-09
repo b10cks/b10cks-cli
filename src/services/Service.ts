@@ -1,7 +1,6 @@
 import type {
   CreateTeamPayload,
   CreateTeamResponse,
-  LoginPayload,
   Space,
   SpacesHierarchyNode,
   SpacesResponse,
@@ -14,35 +13,21 @@ import credentials from '../utils/credentials'
 import BaseService from './BaseService'
 
 export default class Service extends BaseService {
-  async login(input: LoginPayload) {
+  async login(token: string) {
     try {
-      const data = await this.api.login(input)
+      const isValid = await this.api.verifyToken(token)
+      if (!isValid) {
+        console.error('Token verification failed')
+        return false
+      }
+
       credentials.set({
-        login: input.email,
-        password: data.access_token,
-        expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+        login: 'sanctum',
+        password: token,
       })
       return true
     } catch (error: any) {
-      console.error('Login failed:', error.message)
-      return false
-    }
-  }
-
-  async refreshToken() {
-    try {
-      const data = await this.api.refreshToken()
-      const creds = credentials.get()
-      if (creds) {
-        credentials.set({
-          ...creds,
-          password: data.access_token,
-          expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-        })
-      }
-      return true
-    } catch (error: any) {
-      console.error('Token refresh failed:', error.message)
+      console.error('Authentication failed:', error.message)
       return false
     }
   }

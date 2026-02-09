@@ -12,7 +12,6 @@ import {
   GenerateTypesCommand,
   LoginCommand,
   LogoutCommand,
-  RefreshTokenCommand,
   SpacesHierarchyCommand,
   SpacesListCommand,
   TeamsCreateCommand,
@@ -37,7 +36,6 @@ program
 // Register all commands
 const commands = [
   new GenerateTypesCommand(),
-  new RefreshTokenCommand(),
   new LoginCommand(),
   new LogoutCommand(),
   new SpacesListCommand(),

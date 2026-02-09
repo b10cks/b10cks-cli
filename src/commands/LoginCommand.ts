@@ -9,35 +9,40 @@ export class LoginCommand extends BaseCommand {
   register(program: Command): void {
     program
       .command('login')
-      .description('login to b10cks')
+      .description('authenticate with b10cks using a personal access token')
       .action(async () => {
+        const apiDomain = process.env.B10CKS_API_DOMAIN || 'https://api.b10cks.com'
+        const baseUrl = apiDomain.replace('/api', '').replace(/\/+$/, '')
+        const settingsUrl = `${baseUrl}/account/settings/security`
+
+        console.log()
+        console.log(chalk.yellow('📝 To create a personal access token:'))
+        console.log(chalk.gray(`1. Visit: ${chalk.cyan(settingsUrl)}`))
+        console.log(chalk.gray('2. Create a new personal access token'))
+        console.log(chalk.gray('3. Copy the token and paste it below'))
+        console.log()
+
         const content = await inquirer.prompt([
           {
-            type: 'input',
-            name: 'email',
-            message: 'email address:',
-          },
-          {
             type: 'password',
-            name: 'password',
-            message: 'Password:',
+            name: 'token',
+            message: 'Personal access token:',
             validate: (value) => {
-              if (value.length) {
+              if (value.trim().length > 0) {
                 return true
               }
-              return 'Please enter a valid password'
+              return 'Please enter a valid token'
             },
           },
         ])
 
         try {
-          if (await this.service.login(content)) {
+          if (await this.service.login(content.token.trim())) {
             this.displaySuccess(
-              'Logged in successfully! Session Token is stored in your .netrc file.'
+              'Authenticated successfully! Personal access token is stored in your .netrc file.'
             )
-            this.displayTokenInfo()
           } else {
-            console.error(`${chalk.red('✖')} An error occurred when logging in`)
+            console.error(`${chalk.red('✖')} Authentication failed. Please check your token.`)
             process.exit(1)
           }
         } catch (error: any) {
