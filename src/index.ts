@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import fs from 'node:fs'
-import { dirname } from 'node:path'
-import { fileURLToPath } from 'node:url'
 import chalk from 'chalk'
 import { Command } from 'commander'
 import figlet from 'figlet'
+import fs from 'node:fs'
+import { dirname } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import path from 'path'
 import updateNotifier from 'update-notifier'
 

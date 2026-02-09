@@ -1,10 +1,17 @@
-import chalk from 'chalk'
 import type { Command } from 'commander'
+
+import chalk from 'chalk'
+
 import type { SpacesHierarchyNode } from '../types/index.js'
+
 import { BaseCommand } from './BaseCommand.js'
 
 export class SpacesHierarchyCommand extends BaseCommand {
-  private renderSpacesHierarchy(node: SpacesHierarchyNode, prefix: string = '', isLast: boolean = true): string {
+  private renderSpacesHierarchy(
+    node: SpacesHierarchyNode,
+    prefix: string = '',
+    isLast: boolean = true
+  ): string {
     const connector = isLast ? '└─ ' : '├─ '
     const lines: string[] = []
 

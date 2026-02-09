@@ -1,5 +1,7 @@
-import chalk from 'chalk'
 import type { Command } from 'commander'
+
+import chalk from 'chalk'
+
 import { TypesGeneratorService } from '../services/TypeGeneratorService.js'
 import { BaseCommand } from './BaseCommand.js'
 

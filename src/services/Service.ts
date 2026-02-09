@@ -9,6 +9,7 @@ import type {
   TeamHierarchyNode,
   TeamsResponse,
 } from '../types'
+
 import credentials from '../utils/credentials'
 import BaseService from './BaseService'
 

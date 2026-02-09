@@ -1,4 +1,5 @@
 import type { ChalkInstance } from 'chalk'
+
 import API from '../api'
 
 class BaseService {

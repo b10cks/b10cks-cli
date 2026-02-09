@@ -1,6 +1,8 @@
-import chalk from 'chalk'
 import type { Command } from 'commander'
+
+import chalk from 'chalk'
 import inquirer from 'inquirer'
+
 import { BaseCommand } from './BaseCommand.js'
 
 export class LoginCommand extends BaseCommand {
@@ -30,7 +32,9 @@ export class LoginCommand extends BaseCommand {
 
         try {
           if (await this.service.login(content)) {
-            this.displaySuccess('Logged in successfully! Session Token is stored in your .netrc file.')
+            this.displaySuccess(
+              'Logged in successfully! Session Token is stored in your .netrc file.'
+            )
             this.displayTokenInfo()
           } else {
             console.error(`${chalk.red('✖')} An error occurred when logging in`)

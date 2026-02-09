@@ -1,6 +1,6 @@
+import netrc from 'netrc'
 import fs from 'node:fs'
 import os from 'node:os'
-import netrc from 'netrc'
 import path from 'path'
 
 export interface Credentials {

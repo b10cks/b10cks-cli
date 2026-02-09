@@ -1,4 +1,5 @@
 import type { Command } from 'commander'
+
 import { BaseCommand } from './BaseCommand.js'
 
 export class RefreshTokenCommand extends BaseCommand {

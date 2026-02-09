@@ -1,10 +1,17 @@
-import chalk from 'chalk'
 import type { Command } from 'commander'
+
+import chalk from 'chalk'
+
 import type { TeamHierarchyNode } from '../types/index.js'
+
 import { BaseCommand } from './BaseCommand.js'
 
 export class TeamsHierarchyCommand extends BaseCommand {
-  private renderTeamTree(node: TeamHierarchyNode, prefix: string = '', isLast: boolean = true): string {
+  private renderTeamTree(
+    node: TeamHierarchyNode,
+    prefix: string = '',
+    isLast: boolean = true
+  ): string {
     const connector = isLast ? '└─ ' : '├─ '
     const lines: string[] = []
 

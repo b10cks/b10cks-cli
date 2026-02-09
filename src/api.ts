@@ -2,6 +2,7 @@ import fs from 'node:fs'
 import { dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import path from 'path'
+
 import type {
   BlockListResponse,
   CreateTeamPayload,
@@ -11,6 +12,7 @@ import type {
   TeamsResponse,
   TokenResponse,
 } from './types'
+
 import credentials from './utils/credentials'
 
 const DOMAIN = process.env.B10CKS_API_DOMAIN || 'https://api.b10cks.com'
@@ -106,7 +108,12 @@ class API {
     return data
   }
 
-  private async handleResponse<_T>(response: Response, type?: string, key?: string, asBuffer?: boolean): Promise<any> {
+  private async handleResponse<_T>(
+    response: Response,
+    type?: string,
+    key?: string,
+    asBuffer?: boolean
+  ): Promise<any> {
     if (!response.ok) {
       const error: ApiError = new Error('API error')
       error.status = response.status
@@ -119,7 +126,8 @@ class API {
           error.message = 'Access denied. Please check for a valid license.'
           break
         case 404:
-          error.message = type && key ? `${type} with key "${key}" not found.` : 'Resource not found.'
+          error.message =
+            type && key ? `${type} with key "${key}" not found.` : 'Resource not found.'
           break
         case 422: {
           const errorData = await response.json()
@@ -141,7 +149,12 @@ class API {
     return asBuffer ? Buffer.from(await response.arrayBuffer()) : response.json()
   }
 
-  private async makeRequest<T>(url: string, options: RequestInit = {}, type?: string, key?: string): Promise<T> {
+  private async makeRequest<T>(
+    url: string,
+    options: RequestInit = {},
+    type?: string,
+    key?: string
+  ): Promise<T> {
     // Ensure token is valid before making request
     await this.ensureValidToken()
 
@@ -204,7 +217,9 @@ class API {
   }
 
   async getBlocks(space: string): Promise<BlockListResponse> {
-    return this.makeRequest<BlockListResponse>(`${DOMAIN}/mgmt/v1/spaces/${space}/blocks?per_page=9999`)
+    return this.makeRequest<BlockListResponse>(
+      `${DOMAIN}/mgmt/v1/spaces/${space}/blocks?per_page=9999`
+    )
   }
 
   async getSpaces(): Promise<SpacesResponse> {

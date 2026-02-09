@@ -1,7 +1,10 @@
-import chalk from 'chalk'
 import type { Command } from 'commander'
+
+import chalk from 'chalk'
 import inquirer from 'inquirer'
+
 import type { CreateTeamPayload } from '../types/index.js'
+
 import { BaseCommand } from './BaseCommand.js'
 
 export class TeamsCreateCommand extends BaseCommand {

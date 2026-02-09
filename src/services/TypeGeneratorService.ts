@@ -1,7 +1,9 @@
-import * as fs from 'node:fs'
 import chalk from 'chalk'
+import * as fs from 'node:fs'
 import * as path from 'path'
+
 import type { BlockList, BlockResource } from '../types'
+
 import BaseService from './BaseService'
 
 export class TypesGeneratorService extends BaseService {
@@ -170,7 +172,12 @@ export type B10cksLink = {
    * @param schema The complete schema object
    * @returns The corresponding TypeScript type
    */
-  private mapSchemaTypeToTsType(schemaType: string, _key: string, _blockSlug: string, schema: any): string {
+  private mapSchemaTypeToTsType(
+    schemaType: string,
+    _key: string,
+    _blockSlug: string,
+    schema: any
+  ): string {
     switch (schemaType) {
       case 'text':
       case 'textarea':
@@ -188,7 +195,10 @@ export type B10cksLink = {
         return 'Array<B10cksAsset>'
       case 'blocks': {
         const whitelistTypes: string[] = []
-        if (schema.restrict_blocks && (schema.block_whitelist?.length > 0 || schema.tag_whitelist?.length > 0)) {
+        if (
+          schema.restrict_blocks &&
+          (schema.block_whitelist?.length > 0 || schema.tag_whitelist?.length > 0)
+        ) {
           schema.block_whitelist.forEach((blockSlug: string) => {
             if (this.allBlocks[blockSlug]) {
               whitelistTypes.push(this.allBlocks[blockSlug].name)

@@ -1,5 +1,7 @@
-import chalk from 'chalk'
 import type { Command } from 'commander'
+
+import chalk from 'chalk'
+
 import { BaseCommand } from './BaseCommand.js'
 
 export class TeamsListCommand extends BaseCommand {

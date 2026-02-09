@@ -1,5 +1,6 @@
 import chalk from 'chalk'
 import ora from 'ora'
+
 import Service from '../services/Service.js'
 import credentials from './credentials.js'
 
@@ -46,7 +47,9 @@ export async function refreshTokenIfNeeded(silent: boolean = false): Promise<boo
 export function ensureLoggedIn(): void {
   const creds = credentials.get()
   if (!creds?.password) {
-    console.error(`${chalk.red('✖')} Not logged in. Please login first with: ${chalk.cyan('b10cks login')}`)
+    console.error(
+      `${chalk.red('✖')} Not logged in. Please login first with: ${chalk.cyan('b10cks login')}`
+    )
     process.exit(1)
   }
 }
