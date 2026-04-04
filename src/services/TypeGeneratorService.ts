@@ -12,6 +12,8 @@ export class TypesGeneratorService extends BaseService {
   private readonly indexFilePath: string
   private allBlocks: BlockList = {}
   private generatedTypes: string[] = []
+  private additionalTypeDeclarations: string[] = []
+  private declaredAdditionalTypes = new Set<string>()
 
   constructor(outputDir: string = './b10cks/types') {
     super()
@@ -60,6 +62,8 @@ export class TypesGeneratorService extends BaseService {
   public generateTypes(blocks: Array<BlockResource>): void {
     this.ensureDirectoryExists(this.outputDir)
     this.generatedTypes = []
+    this.additionalTypeDeclarations = []
+    this.declaredAdditionalTypes = new Set()
 
     const typesContent = this.generateTypesContent(blocks)
 
@@ -120,14 +124,61 @@ export type B10cksLink = {
   target?: '_self' | '_blank' | '_parent' | '_top'
 }
 
+export interface B10cksRichTextMark {
+  type: string
+  attrs?: Record<string, unknown>
+}
+
+export interface B10cksRichTextNode {
+  type: string
+  attrs?: Record<string, unknown>
+  content?: B10cksRichTextNode[]
+  marks?: B10cksRichTextMark[]
+  text?: string
+}
+
+export interface B10cksRichText {
+  type: 'doc'
+  content?: B10cksRichTextNode[]
+}
+
+export type B10cksMeta = {
+  title?: string
+  description?: string
+  canonical?: string
+  robots?: string
+  ogTitle?: string
+  ogDescription?: string
+  ogImage?: B10cksAsset | null
+}
+
+export type B10cksTableCell = string | number | boolean | null
+
+export interface B10cksTableRow {
+  id: string
+  cells: Record<string, B10cksTableCell>
+}
+
+export interface B10cksTable {
+  header: Record<string, string>
+  rows: B10cksTableRow[]
+}
+
 `
+    const blockInterfaces: string[] = []
 
     blocks.forEach((block) => {
       const typeName = this.getInterfaceName(block.slug)
       const interfaceContent = this.generateInterfaceContent(block, typeName)
-      content += interfaceContent
+      blockInterfaces.push(interfaceContent)
       this.generatedTypes.push(typeName)
     })
+
+    if (this.additionalTypeDeclarations.length > 0) {
+      content += `${this.additionalTypeDeclarations.join('\n')}\n`
+    }
+
+    content += blockInterfaces.join('')
 
     return content
   }
@@ -178,11 +229,14 @@ export type B10cksLink = {
     _blockSlug: string,
     schema: any
   ): string {
-    switch (schemaType) {
+    switch (this.normalizeSchemaType(schemaType)) {
+      case 'date':
       case 'text':
       case 'textarea':
       case 'markdown':
         return 'string'
+      case 'richtext':
+        return 'B10cksRichText'
       case 'boolean':
         return 'boolean'
       case 'number':
@@ -191,8 +245,10 @@ export type B10cksLink = {
         return 'B10cksLink'
       case 'asset':
         return 'B10cksAsset'
-      case 'multiAsset':
+      case 'multi_assets':
         return 'Array<B10cksAsset>'
+      case 'references':
+        return 'string[]'
       case 'blocks': {
         const whitelistTypes: string[] = []
         if (
@@ -238,8 +294,117 @@ export type B10cksLink = {
         }
 
         return 'string'
+      case 'options': {
+        const optionType = this.mapSchemaTypeToTsType('option', _key, _blockSlug, schema)
+        return optionType === 'string' ? 'string[]' : `Array<${optionType}>`
+      }
+      case 'meta':
+        return 'B10cksMeta'
+      case 'table':
+        return this.registerTableType(_blockSlug, _key, schema)
       default:
         return 'any'
     }
+  }
+
+  private registerTableType(blockSlug: string, key: string, schema: any): string {
+    const columns = Array.isArray(schema?.columns) ? schema.columns : []
+    if (columns.length === 0) {
+      return 'B10cksTable'
+    }
+
+    const baseTypeName = `B10cks${this.toPascalCase(blockSlug)}${this.toPascalCase(key)}`
+    const tableTypeName = `${baseTypeName}Table`
+    const rowTypeName = `${baseTypeName}TableRow`
+
+    if (this.declaredAdditionalTypes.has(tableTypeName)) {
+      return tableTypeName
+    }
+
+    const columnKeys = columns
+      .map((column: any) => column?.key)
+      .filter((columnKey: unknown): columnKey is string => typeof columnKey === 'string' && columnKey !== '')
+
+    if (columnKeys.length === 0) {
+      return 'B10cksTable'
+    }
+
+    const headerKeyType = columnKeys.map((columnKey) => JSON.stringify(columnKey)).join(' | ')
+    const cellProperties = columns
+      .filter(
+        (column: any): column is { key: string; type?: string; options?: Array<{ value?: string }> } =>
+          typeof column?.key === 'string' && column.key !== ''
+      )
+      .map(
+        (column) => `    ${JSON.stringify(column.key)}?: ${this.mapTableColumnTypeToTsType(column)}`
+      )
+
+    this.additionalTypeDeclarations.push(`export interface ${rowTypeName} {
+  id: string
+  cells: {
+${cellProperties.join('\n')}
+  }
+}
+
+export interface ${tableTypeName} {
+  header: Partial<Record<${headerKeyType}, string>>
+  rows: ${rowTypeName}[]
+}
+`)
+    this.declaredAdditionalTypes.add(tableTypeName)
+
+    return tableTypeName
+  }
+
+  private mapTableColumnTypeToTsType(column: {
+    type?: string
+    options?: Array<{ value?: string }>
+  }): string {
+    switch (column.type) {
+      case 'text':
+        return 'string'
+      case 'number':
+        return 'number | null'
+      case 'boolean':
+        return 'boolean'
+      case 'option': {
+        if (Array.isArray(column.options) && column.options.length > 0) {
+          const optionValues = column.options
+            .filter((option): option is { value: string } => typeof option?.value === 'string')
+            .map((option) => `'${option.value}'`)
+
+          if (optionValues.length > 0) {
+            return `${optionValues.join(' | ')} | null`
+          }
+        }
+
+        return 'string | null'
+      }
+      default:
+        return 'B10cksTableCell'
+    }
+  }
+
+  private normalizeSchemaType(schemaType: string): string {
+    switch (schemaType) {
+      case 'block':
+        return 'blocks'
+      case 'multiAsset':
+        return 'multi_assets'
+      case 'reference':
+        return 'references'
+      default:
+        return schemaType
+    }
+  }
+
+  private toPascalCase(value: string): string {
+    const parts = value.split(/[^a-zA-Z0-9]+/).filter(Boolean)
+
+    if (parts.length === 0) {
+      return 'Value'
+    }
+
+    return parts.map((part) => part.charAt(0).toUpperCase() + part.slice(1)).join('')
   }
 }
