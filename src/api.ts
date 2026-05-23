@@ -5,12 +5,13 @@ import path from 'path'
 
 import type {
   BlockListResponse,
+  CreateDataSourceEntryPayload,
+  CreateDataSourceEntryResponse,
   CreateTeamPayload,
   CreateTeamResponse,
   SpacesResponse,
   TeamsResponse,
 } from './types'
-
 import credentials from './utils/credentials'
 
 const DOMAIN = process.env.B10CKS_API_DOMAIN || 'https://api.b10cks.com'
@@ -154,6 +155,20 @@ class API {
       method: 'POST',
       body: JSON.stringify(payload),
     })
+  }
+
+  async createDataSourceEntry(
+    spaceId: string,
+    dataSourceId: string,
+    payload: CreateDataSourceEntryPayload
+  ): Promise<CreateDataSourceEntryResponse> {
+    return this.makeRequest<CreateDataSourceEntryResponse>(
+      `${DOMAIN}/mgmt/v1/spaces/${spaceId}/data-sources/${dataSourceId}/entries`,
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }
+    )
   }
 }
 

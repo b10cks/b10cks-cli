@@ -148,6 +148,72 @@ This command builds the hierarchy client-side by combining team and space data t
 2. Spaces belonging to each team
 3. Visual organization with proper indentation and tree connectors
 
+### Data Sources Management
+
+#### Create a Data Source Entry
+
+Create a new data source entry by posting a `key` and `value` to a specific data source in a space.
+
+**Quick Mode (Positional arguments + flags):**
+
+```sh
+b10cks data-sources-entries-create <spaceId> <dataSourceId> --key "key" --value "value"
+
+# Example
+b10cks data-sources-entries-create space_123 ds_456 --key "country" --value "Austria"
+```
+
+**Quick Mode (Options only):**
+
+```sh
+b10cks data-sources-entries-create \
+  --space-id "space_123" \
+  --data-source-id "ds_456" \
+  --key "country" \
+  --value "Austria"
+```
+
+**Interactive Mode (Guided prompts for entry data):**
+
+```sh
+b10cks data-sources-entries-create <spaceId> <dataSourceId> --interactive
+
+# Or using package runners
+npx b10cks-cli data-sources-entries-create <spaceId> <dataSourceId> --interactive
+bunx b10cks-cli data-sources-entries-create <spaceId> <dataSourceId> --interactive
+yarn dlx b10cks-cli data-sources-entries-create <spaceId> <dataSourceId> --interactive
+```
+
+**Options and Arguments:**
+
+- `[spaceId]` - Space ID (optional if `--space-id` is provided)
+- `[dataSourceId]` - Data source ID (optional if `--data-source-id` is provided)
+- `-s, --space-id <spaceId>` - Space ID
+- `-d, --data-source-id <dataSourceId>` - Data source ID
+- `-k, --key <key>` - Entry key
+- `-v, --value <value>` - Entry value
+- `--interactive` - Launch interactive mode for `key` and `value`
+
+**Validation:**
+
+- Space ID: required
+- Data source ID: required
+- Key: required
+- Value: required
+
+**Examples:**
+
+```sh
+# Using positional arguments
+b10cks data-sources-entries-create space_123 ds_456 --key "language" --value "de"
+
+# Using named options
+b10cks data-sources-entries-create --space-id space_123 --data-source-id ds_456 --key "timezone" --value "Europe/Vienna"
+
+# Prompt for key/value interactively
+b10cks data-sources-entries-create space_123 ds_456 --interactive
+```
+
 ### Teams Management
 
 #### List Teams

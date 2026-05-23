@@ -1,9 +1,9 @@
-import chalk from 'chalk'
 import * as fs from 'node:fs'
 import * as path from 'path'
 
-import type { BlockList, BlockResource } from '../types'
+import chalk from 'chalk'
 
+import type { BlockList, BlockResource } from '../types'
 import BaseService from './BaseService'
 
 export class TypesGeneratorService extends BaseService {
@@ -145,7 +145,7 @@ export interface B10cksRichText {
 export type B10cksMeta = {
   title?: string
   description?: string
-  canonical?: string
+  canonical?: B10cksLink
   robots?: string
   ogTitle?: string
   ogDescription?: string
@@ -323,7 +323,10 @@ export interface B10cksTable {
 
     const columnKeys = columns
       .map((column: any) => column?.key)
-      .filter((columnKey: unknown): columnKey is string => typeof columnKey === 'string' && columnKey !== '')
+      .filter(
+        (columnKey: unknown): columnKey is string =>
+          typeof columnKey === 'string' && columnKey !== ''
+      )
 
     if (columnKeys.length === 0) {
       return 'B10cksTable'
@@ -332,7 +335,9 @@ export interface B10cksTable {
     const headerKeyType = columnKeys.map((columnKey) => JSON.stringify(columnKey)).join(' | ')
     const cellProperties = columns
       .filter(
-        (column: any): column is { key: string; type?: string; options?: Array<{ value?: string }> } =>
+        (
+          column: any
+        ): column is { key: string; type?: string; options?: Array<{ value?: string }> } =>
           typeof column?.key === 'string' && column.key !== ''
       )
       .map(

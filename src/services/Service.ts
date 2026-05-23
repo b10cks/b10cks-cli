@@ -1,4 +1,6 @@
 import type {
+  CreateDataSourceEntryPayload,
+  CreateDataSourceEntryResponse,
   CreateTeamPayload,
   CreateTeamResponse,
   Space,
@@ -8,7 +10,6 @@ import type {
   TeamHierarchyNode,
   TeamsResponse,
 } from '../types'
-
 import credentials from '../utils/credentials'
 import BaseService from './BaseService'
 
@@ -94,6 +95,14 @@ export default class Service extends BaseService {
 
   async createTeam(payload: CreateTeamPayload): Promise<CreateTeamResponse> {
     return this.api.createTeam(payload)
+  }
+
+  async createDataSourceEntry(
+    spaceId: string,
+    dataSourceId: string,
+    payload: CreateDataSourceEntryPayload
+  ): Promise<CreateDataSourceEntryResponse> {
+    return this.api.createDataSourceEntry(spaceId, dataSourceId, payload)
   }
 
   async buildSpacesHierarchy(): Promise<SpacesHierarchyNode | null> {

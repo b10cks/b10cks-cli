@@ -1,4 +1,5 @@
 export { BaseCommand } from './BaseCommand.js'
+export { DataSourcesEntriesCreateCommand } from './DataSourcesEntriesCreateCommand.js'
 export { GenerateTypesCommand } from './GenerateTypesCommand.js'
 export { LoginCommand } from './LoginCommand.js'
 export { LogoutCommand } from './LogoutCommand.js'

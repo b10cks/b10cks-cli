@@ -68,6 +68,21 @@ export interface CreateTeamResponse {
   data: Team
 }
 
+export interface CreateDataSourceEntryPayload {
+  key: string
+  value: string
+}
+
+export interface DataSourceEntry {
+  id: string
+  key: string
+  value: string
+}
+
+export interface CreateDataSourceEntryResponse {
+  data: DataSourceEntry
+}
+
 export interface SpacesHierarchyNode {
   id: string
   name: string
